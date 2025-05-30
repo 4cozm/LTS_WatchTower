@@ -1,22 +1,40 @@
 import dotenv from 'dotenv';
-import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import { initTemplateJob } from './jobs/refreshTemplate.js';
+import { sendAlertTalk } from './services/aligoService.js';
+import { WebSocketWatcher } from './services/webSocketWatcher.js';
 dotenv.config();
 
-const app = express();
-const PORT = 3000;
+const server = http.createServer();
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+  },
+});
+WebSocketWatcher(io); //웹 소켓 미연결 감시 시작
 
-// JSON, x-www-form-urlencoded 파싱 미들웨어
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+io.on('connection', socket => {
+  console.log(`📡 클라이언트 연결: ${socket.id}`);
 
-// 기본 라우터
-app.get('/', (req, res) => {
-  res.send('Hello');
+  socket.on('sendAlertTalk', async data => {
+    console.log('📨 알림톡 요청 수신:', data);
+
+    try {
+      const result = await sendAlertTalk(data);
+      socket.emit('sendSuccess', result);
+    } catch (err) {
+      socket.emit('sendError', { error: err.message });
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`❌ 연결 종료: ${socket.id} 종료 시각:${Date.now()}`);
+  });
 });
 
-// 서버 시작
-app.listen(PORT, async () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, async () => {
+  console.log(`🚀 WebSocket 서버 실행 중 (ws://localhost:${PORT})`);
   await initTemplateJob();
 });
