@@ -1,4 +1,4 @@
-import { getTemplateByTitle } from "../jobs/refreshTemplate.js";
+import { getTemplateByTitle } from '../jobs/refreshTemplate.js';
 /**
  *
  * @param {*} templateTitle 탬플릿 한글 이름
@@ -8,9 +8,9 @@ import { getTemplateByTitle } from "../jobs/refreshTemplate.js";
  */
 export async function sendAlertTalk(templateTitle, receiver, variables = {}) {
   const template = getTemplateByTitle(templateTitle);
+
   if (!template) throw new Error(`템플릿 제목 "${templateTitle}"을 찾을 수 없습니다.`);
 
-  // 변수 치환
   const message = template.templtContent.replace(/#\{(.*?)\}/g, (_, key) => {
     const value = variables[key];
     if (value === undefined || value === null) {
@@ -18,49 +18,96 @@ export async function sendAlertTalk(templateTitle, receiver, variables = {}) {
     }
     return value;
   });
-  const raw = template.templtContent;
-  console.log("[RAW]" + JSON.stringify(raw)); // 플레이스홀더 남아 있는 “원본”
-  const expected = raw.replace(/#\{(.*?)\}/g, (_, k) => variables[k]); // 치환 후 메시지
-  console.log("[expected]", JSON.stringify(expected));
-  const actual = message; // 이게 실제 form.append 에 쓰이는 그 변수
-  console.log("[actual  ]", JSON.stringify(actual));
-
   // 전송 데이터 구성
   const form = new URLSearchParams();
-  form.append("apikey", process.env.ALIGO_API_KEY);
-  form.append("userid", process.env.ALIGO_USER_ID);
-  form.append("senderkey", template.senderKey);
-  form.append("tpl_code", template.templtCode);
-  form.append("sender", process.env.ALIGO_SENDER_NUMBER);
-  form.append("receiver_1", receiver);
-  form.append("subject_1", template.templtTitle);
-  form.append("message_1", message);
-  form.append("testMode", "N"); //테스트모드
+  form.append('apikey', process.env.ALIGO_API_KEY);
+  form.append('userid', process.env.ALIGO_USER_ID);
+  form.append('senderkey', template.senderKey);
+  form.append('tpl_code', template.templtCode);
+  form.append('sender', process.env.ALIGO_SENDER_NUMBER);
+  form.append('receiver_1', receiver);
+  form.append('subject_1', template.templtName);
+  form.append('message_1', message);
+  form.append('emtitle_1', template.templtTitle); //강조표기형의 경우 필수임
+  form.append('testMode', 'N'); //테스트모드
 
-  const response = await fetch("https://kakaoapi.aligo.in/akv10/alimtalk/send/", {
-    method: "POST",
+  const response = await fetch('https://kakaoapi.aligo.in/akv10/alimtalk/send/', {
+    method: 'POST',
     body: form,
   });
 
   const result = await response.json();
-  console.log(result);
+  console.log("카카오 알림톡"+result.message);
   if (result.code !== 0) {
-    console.error("알림톡 전송 실패:", result.message);
+    console.error('알림톡 전송 실패:', result.message);
     throw new Error(result.message);
   }
 
   return result;
 }
 
-function findDiffPositions(a, b) {
-  const max = Math.max(a.length, b.length);
-  for (let i = 0; i < max; i++) {
-    const ac = a.charCodeAt(i) || -1;
-    const bc = b.charCodeAt(i) || -2;
-    if (ac !== bc) {
-      console.log(
-        `pos ${i}: expected=0x${ac.toString(16)}('${a[i] || ""}') ` + `vs actual=0x${bc.toString(16)}('${b[i] || ""}')`
-      );
-    }
+/**
+ * 알리고 전송 내역 조회 (오늘 날짜 기준)
+ * @returns {Promise<Object>} - 전송 내역 결과 객체
+ */
+export async function getTodayAligoSendHistory() {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const dateStr = `${yyyy}${mm}${dd}`; // YYYYMMDD 형식
+
+  const form = new URLSearchParams();
+  form.append('apikey', process.env.ALIGO_API_KEY);
+  form.append('userid', process.env.ALIGO_USER_ID);
+  form.append('startdate', dateStr);
+  form.append('enddate', dateStr);
+  form.append('page', '1');
+  form.append('limit', '50');
+
+  const response = await fetch('https://kakaoapi.aligo.in/akv10/history/list/', {
+    method: 'POST',
+    body: form,
+  });
+
+  const result = await response.json();
+
+  if (result.code !== 0) {
+    console.error('전송 내역 조회 실패:', result.message);
+    throw new Error(result.message);
   }
+
+  console.log('[📜 오늘자 전송 내역]', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 알리고 메시지 전송 결과 상세 조회
+ * @param {string|number} mid - 메시지 고유 ID
+ * @returns {Promise<Object>} - 상세 결과 객체
+ */
+export async function getAligoMessageDetail(mid) {
+  if (!mid) throw new Error('메시지 고유 ID(mid)는 필수입니다.');
+
+  const form = new URLSearchParams();
+  form.append('apikey', process.env.ALIGO_API_KEY);
+  form.append('userid', process.env.ALIGO_USER_ID);
+  form.append('mid', mid);
+  form.append('page', '1');
+  form.append('limit', '50');
+
+  const response = await fetch('https://kakaoapi.aligo.in/akv10/history/detail/', {
+    method: 'POST',
+    body: form,
+  });
+
+  const result = await response.json();
+
+  if (result.code !== 0) {
+    console.error('전송 상세 조회 실패:', result.message);
+    throw new Error(result.message);
+  }
+
+  console.log('[📦 상세 조회 결과]', JSON.stringify(result, null, 2));
+  return result;
 }
