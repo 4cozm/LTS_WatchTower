@@ -12,7 +12,7 @@
  *
  * @returns {Promise<Response>|void} 개발 환경에서는 아무 작업도 하지 않으며, 운영 환경에서는 fetch Promise를 반환합니다.
  */
-export function sendToNtfy(topic, options) {
+export default function sendToNtfy(topic, options) {
   const { title, message, priority, tags } = options;
   if (process.env.ENVIRONMENT === "DEV") {
     console.log("[DEV] 알림 생략됨:", title, message, priority, tags);
@@ -34,5 +34,3 @@ export function sendToNtfy(topic, options) {
     body: message,
   });
 }
-
-export default sendToNtfy;
