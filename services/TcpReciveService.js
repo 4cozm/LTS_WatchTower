@@ -1,8 +1,8 @@
 import { protoHandlers } from '../proto/protoHandler.js';
 import { getMessageType } from './protobufService.js';
+
 export function createSocketHandler(socket) {
   let buffer = Buffer.alloc(0);
-
   socket.on('data', data => {
     buffer = Buffer.concat([buffer, data]);
 

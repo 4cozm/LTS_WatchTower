@@ -11,7 +11,13 @@ export const loadProto = async () => {
 
 export const getMessageType = typeName => {
   if (!root) throw new Error('proto not loaded yet!');
-  return root.lookupType(typeName);
+  try {
+    const type = root.lookupType(typeName);
+    return type;
+  } catch (e) {
+    console.error('프로토버프 타입을 가져오는데 실패했습니다', e);
+    throw new Error(e);
+  }
 };
 
 /**
@@ -20,11 +26,26 @@ export const getMessageType = typeName => {
  * @param {Object} payload - 메시지에 들어갈 데이터
  * @returns {Buffer} - 4바이트 길이 프레임 + 메시지 바디가 포함된 전체 Buffer
  */
-export function encodeProtoMessage(MessageType, payload) {
-  const messageBuffer = MessageType.encode(payload).finish();
-  const lengthBuffer = Buffer.alloc(4);
-  lengthBuffer.writeUInt32BE(messageBuffer.length, 0);
-  return Buffer.concat([lengthBuffer, messageBuffer]);
+export function encodeProtoMessage(messageTypeName, payload) {
+  try {
+    const Envelope = getMessageType('Envelope');
+    
+    const wrappedPayload = {
+      [messageTypeName]: payload,
+    };
+
+    const verifyResult = Envelope.verify(wrappedPayload);
+    if (verifyResult !== null) {
+      throw new Error(`프로토 메시지 검증 실패: ${verifyResult}`);
+    }
+
+    const messageBuffer = Envelope.encode(wrappedPayload).finish();
+    const lengthBuffer = Buffer.alloc(4);
+    lengthBuffer.writeUInt32BE(messageBuffer.length, 0);
+    return Buffer.concat([lengthBuffer, messageBuffer]);
+  } catch (e) {
+    console.error('프로토 메세지를 인코딩하는 중 문제가 발생했습니다', e);
+  }
 }
 
 /**

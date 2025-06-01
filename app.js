@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import net from 'net';
-import { loadProto } from './services/protobufService.js';
+import { encodeProtoMessage, loadProto } from './services/protobufService.js';
 import { createSocketHandler } from './services/TcpReciveService.js';
 
 dotenv.config();
@@ -14,6 +14,12 @@ async function startServer() {
   const server = net.createServer(socket => {
     console.log('클라이언트 연결됨 :', socket.remoteAddress);
     createSocketHandler(socket);
+    const payload = {
+      from: 'watch tower',
+      timestamp: Date.now(),
+    };
+    const sendPing = encodeProtoMessage('ping', payload);
+    socket.write(sendPing);
   });
 
   server.listen(PORT, () => {
