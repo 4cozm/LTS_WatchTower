@@ -35,6 +35,6 @@ export function createSocketHandler(socket) {
   });
 
   socket.on('close', () => {
-    console.log('클라이언트 연결 종료');
+    console.log('클라이언트 연결 종료 :', socket.remoteAddress);
   });
 }

@@ -12,7 +12,7 @@ async function startServer() {
   console.log('proto 로딩 완료');
 
   const server = net.createServer(socket => {
-    console.log('클라이언트 연결됨 IP 주소:', socket.remoteAddress);
+    console.log('클라이언트 연결됨 :', socket.remoteAddress);
     createSocketHandler(socket);
   });
 
