@@ -1,20 +1,30 @@
-import express from "express";
-import dotenv from "dotenv";
+import dotenv from 'dotenv';
+import net from 'net';
+import { encodeProtoMessage, loadProto } from './services/protobufService.js';
+import { createSocketHandler } from './services/TcpReciveService.js';
+
 dotenv.config();
 
-const app = express();
-const PORT = 3000;
+const PORT = 4000;
 
-// JSON, x-www-form-urlencoded 파싱 미들웨어
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+async function startServer() {
+  await loadProto();
+  console.log('proto 로딩 완료');
 
-// 기본 라우터
-app.get("/", (req, res) => {
-  res.send("Hello");
-});
+  const server = net.createServer(socket => {
+    console.log('클라이언트 연결됨 :', socket.remoteAddress);
+    createSocketHandler(socket);
+    const payload = {
+      from: 'watch tower',
+      timestamp: Date.now(),
+    };
+    const sendPing = encodeProtoMessage('ping', payload);
+    socket.write(sendPing);
+  });
 
-// 서버 시작
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running at http://localhost:${PORT}`);
-});
+  server.listen(PORT, () => {
+    console.log(`TCP 서버 포트 ${PORT}에서 대기 중`);
+  });
+}
+
+startServer();
