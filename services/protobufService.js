@@ -22,7 +22,7 @@ export const getMessageType = typeName => {
 
 /**
  * 주어진 Protobuf 메시지 타입과 데이터로 직렬화된 Buffer 생성
- * @param {protobuf.Type} MessageType - Protobuf 메시지 타입
+ * @param {String} MessageType - Protobuf 메시지 타입
  * @param {Object} payload - 메시지에 들어갈 데이터
  * @returns {Buffer} - 4바이트 길이 프레임 + 메시지 바디가 포함된 전체 Buffer
  */

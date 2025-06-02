@@ -1,9 +1,19 @@
-import { protoHandlers } from '../proto/protoHandler.js';
-import { getMessageType } from './protobufService.js';
+import { protoHandlers } from "../proto/protoHandler.js";
+import { getMessageType } from "./protobufService.js";
 
 export function createSocketHandler(socket) {
+  let isAuthenticated = false; // ← 인증 상태
+
+  const authTimeout = setTimeout(() => {
+    if (!isAuthenticated) {
+      console.warn("인증 실패로 연결 종료:", socket.remoteAddress);
+      socket.destroy(); // 연결 강제 종료
+    }
+  }, 10_000); // 10초
+
   let buffer = Buffer.alloc(0);
-  socket.on('data', data => {
+
+  socket.on("data", (data) => {
     buffer = Buffer.concat([buffer, data]);
 
     while (buffer.length >= 4) {
@@ -16,25 +26,35 @@ export function createSocketHandler(socket) {
       buffer = buffer.slice(4 + msgLength); // 다음 메시지 준비
 
       try {
-        const Envelope = getMessageType('Envelope');
+        const Envelope = getMessageType("Envelope");
         const decoded = Envelope.decode(messageBody);
-        const payloadType = decoded.Object.keys(decoded)[0];
+        const payloadType = Object.keys(decoded)[0];
         // 분기 처리
 
         const handler = protoHandlers[payloadType];
 
         if (handler) {
-          handler(decoded[payloadType], socket); // 메시지 객체와 연결 소켓을 전달
-        } else {
-          console.warn('지원하지 않는 메시지:', payloadType);
+          if (payloadType === "auth") {
+            handler(decoded[payloadType], socket, () => {
+              isAuthenticated = true;
+              clearTimeout(authTimeout); // 인증되었으니 타이머 제거
+            });
+          } else {
+            if (!isAuthenticated) {
+              console.warn("인증되지 않은 소켓에서 메시지 수신됨:", payloadType);
+              return;
+            }
+
+            handler(decoded[payloadType], socket); // 정상 처리
+          }
         }
       } catch (err) {
-        console.error('역직렬화 실패:', err.message);
+        console.error("역직렬화 실패:", err);
       }
     }
   });
 
-  socket.on('close', () => {
-    console.log('클라이언트 연결 종료 :', socket.remoteAddress);
+  socket.on("close", () => {
+    console.log("클라이언트 연결 종료 :", socket.remoteAddress);
   });
 }
