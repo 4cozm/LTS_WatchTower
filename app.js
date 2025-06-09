@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import net from 'net';
 import { loadProto } from './services/protobufService.js';
-import { createSocketHandler } from './services/TcpReciveService.js';
+import { createSocketHandler } from './services/tcpReciveService.js';
 
 dotenv.config();
 
