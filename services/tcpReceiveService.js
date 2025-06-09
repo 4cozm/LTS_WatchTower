@@ -32,7 +32,6 @@ export function createSocketHandler(socket) {
         // 분기 처리
 
         const handler = protoHandlers[payloadType];
-        console.log('핸들러 호출', payloadType);
 
         if (handler) {
           if (payloadType === 'auth') {

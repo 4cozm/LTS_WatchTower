@@ -37,7 +37,7 @@ export async function sendAlertTalk(templateTitle, receiver, variables = {}) {
   });
 
   const result = await response.json();
-  console.log("카카오 알림톡"+result.message);
+  console.log("알리고 메세지 : "+result.message);
   if (result.code !== 0) {
     console.error('알림톡 전송 실패:', result.message);
     throw new Error(result.message);

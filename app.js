@@ -1,15 +1,22 @@
 import dotenv from 'dotenv';
 import net from 'net';
+import { initTemplateJob } from './jobs/refreshTemplate.js';
 import { loadProto } from './services/protobufService.js';
-import { createSocketHandler } from './services/tcpReciveService.js';
+import { createSocketHandler } from './services/tcpReceiveService.js';
 
 dotenv.config();
 
 const PORT = 4000;
 
 async function startServer() {
-  await loadProto();
-  console.log('proto 로딩 완료');
+  try {
+    await loadProto();
+    console.log('proto 로딩 완료');
+    await initTemplateJob();
+  } catch (e) {
+    console.log('⚠️서버 종료⚠️');
+    process.exit(1);
+  }
 
   const server = net.createServer(socket => {
     console.log('클라이언트 연결됨 :', socket.remoteAddress);
