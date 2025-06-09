@@ -10,7 +10,7 @@ export const protoHandlers = {
   ping: handlePing,
   pong: handlePong,
   status: handleServerStatus,
-  kakao: handleKakaoAlertNotification,
+  kakaoAlert: handleKakaoAlertNotification,
   ntfy: handlentfyNotification,
   auth: handleAuth,
   message: handleCommonMessage,
