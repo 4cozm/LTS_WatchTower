@@ -1,5 +1,6 @@
 import { protoHandlers } from '../proto/protoHandler.js';
 import { getMessageType } from './protobufService.js';
+import { setAuthedSocket } from './tcpSession.js';
 
 export function createSocketHandler(socket) {
   let isAuthenticated = false; // ← 인증 상태
@@ -37,6 +38,7 @@ export function createSocketHandler(socket) {
           if (payloadType === 'auth') {
             handler(decoded[payloadType], socket, () => {
               isAuthenticated = true;
+              setAuthedSocket(socket); // 단일 저장
               clearTimeout(authTimeout); // 인증되었으니 타이머 제거
             });
           } else {
