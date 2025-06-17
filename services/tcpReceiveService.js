@@ -53,6 +53,9 @@ export function createSocketHandler(socket) {
       }
     }
   });
+  socket.on('error', err => {
+    console.error('소켓 에러 발생:', err.message);
+  });
 
   socket.on('close', () => {
     console.log('클라이언트 연결 종료 :', socket.remoteAddress);
