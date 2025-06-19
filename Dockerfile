@@ -2,7 +2,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN apt-get update && apt-get upgrade -y && npm install
+RUN npm install
 
 COPY . .
 EXPOSE 3000
