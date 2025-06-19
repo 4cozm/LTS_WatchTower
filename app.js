@@ -34,7 +34,7 @@ async function startServer() {
     res.send("✅ 웹 서버가 실행 중입니다.");
   });
 
-  app.listen(80, () => {
+  app.listen(3000, () => {
     console.log(`🟢 HTTP 서버 대기 중`);
   });
 
