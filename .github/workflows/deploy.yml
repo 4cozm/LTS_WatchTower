@@ -1,0 +1,30 @@
+name: Auto Deploy to GCP
+
+on:
+    pull_request:
+        types: [closed]
+        branches:
+            - dev
+
+jobs:
+    deploy:
+        if: github.event.pull_request.merged == true
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: ✅ Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: 🚀 SSH Deploy to GCP
+              uses: appleboy/ssh-action@v1.0.3
+              with:
+                  host: ${{ secrets.LTS_HOST }}
+                  username: ${{ secrets.LTS_SSH_USER }}
+                  key: ${{ secrets.LTS_SSH_KEY }}
+                  port: 22
+                  script: |
+                      cd ~/LTS_WatchTower
+                      git pull origin dev
+                      docker compose down
+                      docker compose up --build -d
+                      echo "✅ 배포 완료"
